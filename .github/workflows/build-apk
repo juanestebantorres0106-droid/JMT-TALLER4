@@ -1,0 +1,54 @@
+
+name: Generar APK JMT TALLER
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Extraer proyecto
+        run: |
+          mkdir proyecto
+          unzip -o JMT_TALLER_listo_para_compilar_en_nube_v2.zip -d proyecto
+          cp -a proyecto/. .
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Compilar aplicación
+        run: npm run build
+
+      - name: Preparar Android
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Generar APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Guardar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: JMT-TALLER-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
